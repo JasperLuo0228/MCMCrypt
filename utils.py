@@ -1,0 +1,160 @@
+import numpy as np
+import shutil
+import random
+from copy import deepcopy
+from copy import copy
+
+def az_list():
+    """
+    Returns all 82 characters in a fixed order.
+    """
+    ALPHABET = list(
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz"
+        "0123456789"
+        " ,.;:?!-()\"/\\@#&%$_"
+        " "                      # single space at the end
+    )
+    return ALPHABET
+
+# Define groups based on your 82-symbol ALPHABET
+UPPER = set("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+LOWER = set("abcdefghijklmnopqrstuvwxyz")
+
+def generate_random_permutation_map(chars):
+    """
+    Generates a random one-to-one character mapping (permutation)
+    that shuffles characters **within their groups only**:
+      - Uppercase ↔ Uppercase
+      - Lowercase ↔ Lowercase
+      - All other characters (digits, punctuation, space) ↔ within group
+
+    Arguments:
+    - chars: list of all characters (your ALPHABET of length 82)
+
+    Returns:
+    - p_map: dictionary mapping each character to its encrypted version
+    """
+    # Group characters
+    upper = [c for c in chars if c in UPPER]
+    lower = [c for c in chars if c in LOWER]
+    other = [c for c in chars if c not in UPPER and c not in LOWER]
+
+    # Shuffle each group independently
+    shuffled_upper = upper[:]; random.shuffle(shuffled_upper)
+    shuffled_lower = lower[:]; random.shuffle(shuffled_lower)
+    shuffled_other = other[:]; random.shuffle(shuffled_other)
+
+    # Build the permutation map
+    p_map = {}
+    p_map.update(dict(zip(upper, shuffled_upper)))
+    p_map.update(dict(zip(lower, shuffled_lower)))
+    p_map.update(dict(zip(other, shuffled_other)))
+
+    return p_map
+
+def generate_identity_p_map(chars):
+    """
+    Generates an identity permutation map for given list of characters
+    
+    Arguments:
+    chars: list of characters
+    
+    Returns:
+    p_map: an identity permutation map
+    
+    """
+    p_map = {}
+    for c in chars:
+        p_map[c] = c
+    
+    return p_map
+    
+def scramble_text(text, p_map):
+    """
+    Scrambles a text given a permutation map
+    
+    Arguments:
+    text: text to scramble, list of characters
+    
+    p_map: permutation map to scramble text based upon
+    
+    Returns:
+    text_2: the scrambled text
+    """
+    text_2 = []
+    for c in text:
+        text_2.append(p_map.get(c, c))
+        
+    return text_2
+    
+def shuffle_text(text, i1, i2):
+    """
+    Shuffles a text given the index from where to shuffle and
+    the upto what we should shuffle
+    
+    Arguments:
+    i1: index from where to start shuffling from
+    
+    i2: index upto what we should shuffle, excluded.
+    """
+    
+    y = text[i1:i2]
+    random.shuffle(y)
+    t = copy(text)
+    t[i1:i2] = y
+    return t
+    
+def move_one_step(p_map):
+    """
+    Swaps two characters in the given p_map (within the current permutation map).
+    """
+    keys = list(p_map.keys())  # use actual map keys, not hardcoded list
+    sample = random.sample(keys, 2)
+
+    p_map_2 = deepcopy(p_map)
+    p_map_2[sample[1]] = p_map[sample[0]]
+    p_map_2[sample[0]] = p_map[sample[1]]
+
+    return p_map_2
+
+def pretty_string(text, full=False):
+    """
+    Pretty formatted string
+    """
+    if not full:
+        return ''.join(text[1:200]) #+ shutil.get_terminal_size().columns*'-'#'...'
+    else:
+        return ''.join(text) #+ shutil.get_terminal_size().columns*'-'#'...'
+    
+def compute_statistics(filename):
+    """
+    Returns statistics over your fixed 82-symbol ALPHABET.
+    Filters out unseen symbols and normalizes whitespace.
+    """
+    # Load and normalize
+    with open(filename, 'r', encoding='utf-8') as f:
+        data = f.read()
+    data = " ".join(data.replace("\t", " ").replace("\n", " ").replace("\r", " ").split())
+    
+    # Filter to only allowed chars
+    alphabet = az_list()  # 82 symbols
+    data = [c for c in data if c in alphabet]
+
+    # Build transition matrix
+    N = len(alphabet)
+    char_to_ix = {c: i for i, c in enumerate(alphabet)}
+    ix_to_char = {i: c for i, c in enumerate(alphabet)}
+    transition_matrix = np.ones((N, N))  # Laplace smoothing
+    frequency_statistics = np.zeros(N)
+
+    for i in range(len(data) - 1):
+        c1, c2 = data[i], data[i + 1]
+        i1, i2 = char_to_ix[c1], char_to_ix[c2]
+        transition_matrix[i1, i2] += 1
+        frequency_statistics[i1] += 1
+
+    frequency_statistics[char_to_ix[data[-1]]] += 1  # last char
+    transition_matrix /= transition_matrix.sum(axis=1, keepdims=True)
+
+    return char_to_ix, ix_to_char, transition_matrix, frequency_statistics
