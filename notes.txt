@@ -1,0 +1,37 @@
+************
+June 14th, 2025 (Jasper)
+
+- scramble_text.py
+  - Rewrote scrambling logic to preserve formatting characters (newline, tab, space)
+    ➜ Replaced previous `.replace("\n", " ")` logic with direct character scan
+    ➜ Used conditional logic to scramble only 82-character alphabet from az_list()
+  - Switched from printing to file writing
+    ➜ Scrambled result now saved as 'scrambled.txt' with UTF-8 encoding
+  - Added import of az_list() and generate_random_permutation_map() from utils.py
+
+- utils.py
+
+  - az_list()
+    ➜ Modified from just A–Z/a–z to full 82-character alphabet including digits, punctuation, and space.
+    ➜ Purpose: Supports broader character coverage for realistic email/message decoding.
+
+  - generate_random_permutation_map()
+    ➜ New version allows group-wise shuffling:
+        ▸ Uppercase ↔ Uppercase
+        ▸ Lowercase ↔ Lowercase
+        ▸ Digits, punctuation, and space shuffled within their own group.
+    ➜ Ensures structured scrambling useful for decoding and MCMC stability.
+
+  - scramble_text()
+    ➜ Uses `p_map.get(c, c)` to leave characters unchanged if not in map.
+    ➜ Adds robustness for edge characters (like tab, newline, emojis) that shouldn’t be scrambled.
+
+  - move_one_step()
+    ➜ dynamically pulls keys from current `p_map`, supporting all allowed characters.
+    ➜ Enables permutation editing across all 82 characters.
+
+  - compute_statistics()
+    ➜ Normalizes tabs/newlines to space: `replace("\n", " ")` etc.
+    ➜ Filters only the 82-character alphabet using `az_list()`.
+    ➜ Ensures consistent character indexing across training and decoding.
+    ➜ Adds Laplace smoothing (starting transition matrix with ones) to avoid zero-probabilities.
