@@ -35,3 +35,29 @@ June 14th, 2025 (Jasper)
     ➜ Filters only the 82-character alphabet using `az_list()`.
     ➜ Ensures consistent character indexing across training and decoding.
     ➜ Adds Laplace smoothing (starting transition matrix with ones) to avoid zero-probabilities.
+
+- run_deciphering.py
+
+  - Improved input handling and data preprocessing
+    ➜ Applied `.replace()` + `.split()` pipeline to normalize whitespace (newline, tab, carriage return → space)
+    ➜ Filtered scrambled input to contain only valid 82-character alphabet from `az_list()`
+  - Added import of `az_list()` from utils.py
+  - Converted CLI string inputs to `int`/`float` where needed
+
+- deciphering_utils.py
+
+    - compute_log_probability_by_counts()
+        ➜ Added small epsilon (1e-8) to transition_matrix before log to ensure valid computation.
+
+    - propose_a_move()
+        - Replaced basic `move_one_step()` swap with frequency-weighted sampling
+            ➤ Proposal distribution now considers character frequency deviations from mean
+            ➤ Ensures more likely characters are selected for swaps (MCMC convergence improves)
+
+        - Introduced a mixed sampling strategy
+            ➤ Sample from letter-only pool (A-Z, a-z) with probability p_letter = 0.6
+            ➤ Sample from punctuation/digit pool with probability p_punct = 0.3
+            ➤ Fallback to full pool otherwise
+
+        - Added internal `_weighted_choice()` function
+        - Eliminated dependency on `move_one_step()` for full control over proposal distribution

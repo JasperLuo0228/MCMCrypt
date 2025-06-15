@@ -32,15 +32,12 @@ def main(argv):
         print("Decoding file is not specified. Type -h for help.")
         sys.exit(2)
 
-    # Step 1: Load training text
     filename = options.inputfile
     char_to_ix, ix_to_char, tr, fr = compute_statistics(filename)
 
-    # Step 2: Load scrambled file (UTF-8 safe)
-    with open(options.decode, 'r', encoding='utf-8-sig') as f:
+    with open(options.decode, 'r', encoding='utf-8') as f:
         scrambled_text = f.read()
 
-    # Step 3: Normalize and filter
     scrambled_text = " ".join(scrambled_text.replace('\n', ' ')
                                               .replace('\t', ' ')
                                               .replace('\r', ' ')
@@ -48,7 +45,6 @@ def main(argv):
     alphabet = az_list()
     scrambled_text = [c for c in scrambled_text if c in alphabet]
 
-    # Step 4: Run MCMC decoding
     initial_state = get_state(scrambled_text, tr, fr, char_to_ix)
     states = []
     entropies = []
@@ -71,9 +67,8 @@ def main(argv):
         states.extend(state)
         entropies.extend(lps)
 
-    # Step 5: Display top 3 guesses
     results = list(zip(states, entropies))
-    results.sort(key=lambda x: x[1])  # sort by log-likelihood
+    results.sort(key=lambda x: x[1]) 
 
     print("\nBest Guesses:\n")
     for j in range(1, 4):

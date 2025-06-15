@@ -12,7 +12,7 @@ def az_list():
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         "abcdefghijklmnopqrstuvwxyz"
         "0123456789"
-        " ,.;:?!-()\"/\\@#&%$_"
+        ",.;:?!-()\"/\\@#&%$_^"
         " "
     )
     return ALPHABET
@@ -146,23 +146,26 @@ def compute_statistics(filename):
     with open(filename, 'r', encoding='utf-8') as f:
         data = f.read()
     data = " ".join(data.replace("\t", " ").replace("\n", " ").replace("\r", " ").split())
-    
-    alphabet = az_list() 
-    data = [c for c in data if c in alphabet]
 
+    # Fixed alphabet
+    alphabet = az_list()
     N = len(alphabet)
+
     char_to_ix = {c: i for i, c in enumerate(alphabet)}
     ix_to_char = {i: c for i, c in enumerate(alphabet)}
-    transition_matrix = np.ones((N, N))  
-    frequency_statistics = np.zeros(N)
+
+    transition_matrix = np.ones((N, N))  # Laplace smoothing
+    frequency_statistics = np.ones(N)    # Avoid log(0) later
+
+    # Filter to only valid characters
+    data = [c for c in data if c in char_to_ix]
 
     for i in range(len(data) - 1):
-        c1, c2 = data[i], data[i + 1]
-        i1, i2 = char_to_ix[c1], char_to_ix[c2]
+        i1, i2 = char_to_ix[data[i]], char_to_ix[data[i+1]]
         transition_matrix[i1, i2] += 1
         frequency_statistics[i1] += 1
 
-    frequency_statistics[char_to_ix[data[-1]]] += 1  # last char
+    frequency_statistics[char_to_ix[data[-1]]] += 1
     transition_matrix /= transition_matrix.sum(axis=1, keepdims=True)
 
     return char_to_ix, ix_to_char, transition_matrix, frequency_statistics
