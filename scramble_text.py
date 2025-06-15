@@ -23,7 +23,7 @@ def main(argv):
 
     alphabet = az_list() 
     char_to_ix, ix_to_char, tr, fr = compute_statistics(filename)
-    p_map = generate_random_permutation_map(list(char_to_ix.keys()))
+    p_map = generate_random_permutation_map(alphabet)
 
     scrambled_t = []
     for c in original_text:

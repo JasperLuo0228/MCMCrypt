@@ -57,38 +57,47 @@ def compute_transition_counts(text, char_to_ix):
     """
     N = len(char_to_ix)
     transition_counts = np.zeros((N, N))
-    c1 = text[0]
-    i = 0
-    while i < len(text)-1:
-        c2 = text[i+1]
-        transition_counts[char_to_ix[c1],char_to_ix[c2]] += 1
-        c1 = c2
-        i += 1
-    
+
+    for i in range(len(text) - 1):
+        c1, c2 = text[i], text[i + 1]
+        try:
+            i1, i2 = char_to_ix[c1], char_to_ix[c2]
+            transition_counts[i1, i2] += 1
+        except KeyError:
+            continue  # Skip if a character is not in the alphabet
+
     return transition_counts
 
 def compute_log_probability_by_counts(transition_counts, text, permutation_map, char_to_ix, frequency_statistics, transition_matrix):
     """
-    Computes the log probability of a text under a given permutation map.
+    Computes the log-likelihood of a text under a given permutation map using transition counts.
+
+    Arguments:
+    transition_counts: matrix of observed character transitions (i → j)
+    text: input text as a list of characters
+    permutation_map: dictionary mapping each character to its substituted version
+    char_to_ix: character-to-index mapping (dict)
+    frequency_statistics: array of character frequencies
+    transition_matrix: character transition probabilities matrix
+
+    Returns:
+    p: total log-probability of the scrambled text under the proposed permutation
     """
 
-    eps = 1e-8  # small constant to avoid log(0)
+    eps = 1e-8 
 
-    # Map first character
     first_char = permutation_map.get(text[0], text[0])
     c0 = char_to_ix.get(first_char, None)
     if c0 is None:
-        return -np.inf  # unknown character — return lowest possible log prob
+        return -np.inf  
     frequency_statistics = np.clip(frequency_statistics, 1e-8, None)
     p = np.log(frequency_statistics[c0])
 
-    # Build remapped index list
     try:
         indices = [char_to_ix[permutation_map[c]] for c in char_to_ix]
     except KeyError:
-        return -np.inf  # bad permutation
+        return -np.inf  
 
-    # Log transition matrix with epsilon
     log_tm = np.log(transition_matrix + eps)
     log_tm_sub = log_tm[indices, :][:, indices]
 
@@ -149,50 +158,44 @@ def compute_probability_of_state(state):
     
     return p
 
-import numpy as np
-
-# Character groups (must match your 82-symbol ALPHABET)
-LETTER_SET = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
-PUNCT_SET  = set("0123456789 ,.;:?!-()\"/\\@#&%$_ ")   # 19 symbols + space
-
-def propose_a_move(state, eps: float = 1e-6,
-                       p_letter=0.6, p_punct=0.3):
-    """Frequency-weighted, symmetric *mixture* proposal."""
-    rng   = np.random.default_rng()
-    u     = rng.random()
+def propose_a_move(state, eps: float = 1e-6):
+    """
+    Proposes a move by swapping two characters **within the same group**:
+    - Letters with letters
+    - Digits with digits
+    - Punctuation/space with punctuation/space
+    """
+    rng = np.random.default_rng()
     p_map = dict(state["permutation_map"])
     freqs = state["frequency_statistics"]
     char_ix = state["char_to_ix"]
 
-    def _weighted_choice(pool):
-        pool_arr = np.array(list(pool))
-        ix_arr   = [char_ix[c] for c in pool_arr]
-        w        = np.abs(freqs[ix_arr] - freqs.mean()) + eps
-        w        = w / w.sum()
-        return rng.choice(pool_arr, p=w)
+    chars = list(p_map.keys())
 
-    # choose the pool to sample from
-    if u < p_letter:
-        pool = LETTER_SET
-    elif u < p_letter + p_punct:
-        pool = PUNCT_SET
-    else:
-        pool = p_map.keys()      # fall-back to “swap any”
+    letters = [c for c in chars if c.isalpha()]
+    digits  = [c for c in chars if c.isdigit()]
+    puncs   = [c for c in chars if not c.isalnum()]
 
-    # draw two distinct symbols
+    groups = [letters, digits, puncs]
+    group = groups[rng.integers(len(groups))]
+
+    def _sample(pool):
+        pool_arr = np.array(pool)
+        ix_arr = [char_ix[c] for c in pool_arr]
+        weights = np.abs(freqs[ix_arr] - freqs.mean()) + eps
+        weights /= weights.sum()
+        return rng.choice(pool_arr, p=weights)
+
     while True:
-        c1 = _weighted_choice(pool)
-        c2 = _weighted_choice(pool)
+        c1 = _sample(group)
+        c2 = _sample(group)
         if c1 != c2:
             break
 
-    # swap
     p_map[c1], p_map[c2] = p_map[c2], p_map[c1]
-
     new_state = dict(state)
     new_state["permutation_map"] = p_map
     return new_state
-
 
 def pretty_state(state, full=True):
     """

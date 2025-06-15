@@ -43,7 +43,8 @@ def main(argv):
                                               .replace('\r', ' ')
                                               .split())
     alphabet = az_list()
-    scrambled_text = [c for c in scrambled_text if c in alphabet]
+    scrambled_text = [c if c in alphabet else None for c in scrambled_text]
+
 
     initial_state = get_state(scrambled_text, tr, fr, char_to_ix)
     states = []

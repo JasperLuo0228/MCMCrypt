@@ -35,18 +35,18 @@ def generate_random_permutation_map(chars):
     Returns:
     p_map: dictionary mapping each character to a new character within its group
     """
-    upper = [c for c in chars if c in UPPER]
-    lower = [c for c in chars if c in LOWER]
-    other = [c for c in chars if c not in UPPER and c not in LOWER]
+    letters = [c for c in chars if c.isalpha()]
+    digits  = [c for c in chars if c.isdigit()]
+    puncs   = [c for c in chars if not c.isalnum()]
 
-    shuffled_upper = upper[:]; random.shuffle(shuffled_upper)
-    shuffled_lower = lower[:]; random.shuffle(shuffled_lower)
-    shuffled_other = other[:]; random.shuffle(shuffled_other)
+    shuffled_letters = letters[:]; random.shuffle(shuffled_letters)
+    shuffled_digits  = digits[:];  random.shuffle(shuffled_digits)
+    shuffled_puncs   = puncs[:];   random.shuffle(shuffled_puncs)
 
     p_map = {}
-    p_map.update(dict(zip(upper, shuffled_upper)))
-    p_map.update(dict(zip(lower, shuffled_lower)))
-    p_map.update(dict(zip(other, shuffled_other)))
+    p_map.update(dict(zip(letters, shuffled_letters)))
+    p_map.update(dict(zip(digits, shuffled_digits)))
+    p_map.update(dict(zip(puncs, shuffled_puncs)))
 
     return p_map
 
