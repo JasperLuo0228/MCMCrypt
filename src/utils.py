@@ -107,7 +107,7 @@ def move_one_step(p_map):
     Returns:
     p_map_2: a new map with two characters' mappings swapped (deep copy)
     """
-    keys = list(p_map.keys())  # use actual map keys, not hardcoded list
+    keys = list(p_map.keys()) 
     sample = random.sample(keys, 2)
 
     p_map_2 = deepcopy(p_map)
@@ -121,9 +121,9 @@ def pretty_string(text, full=False):
     Pretty formatted string
     """
     if not full:
-        return ''.join(text[1:200]) #+ shutil.get_terminal_size().columns*'-'#'...'
+        return ''.join(text[1:200]) 
     else:
-        return ''.join(text) #+ shutil.get_terminal_size().columns*'-'#'...'
+        return ''.join(text) 
     
 def compute_statistics(filename):
     """
@@ -142,17 +142,15 @@ def compute_statistics(filename):
         data = f.read()
     data = " ".join(data.replace("\t", " ").replace("\n", " ").replace("\r", " ").split())
 
-    # Fixed alphabet
     alphabet = az_list()
     N = len(alphabet)
 
     char_to_ix = {c: i for i, c in enumerate(alphabet)}
     ix_to_char = {i: c for i, c in enumerate(alphabet)}
 
-    transition_matrix = np.ones((N, N))  # Laplace smoothing
-    frequency_statistics = np.ones(N)    # Avoid log(0) later
+    transition_matrix = np.ones((N, N))  
+    frequency_statistics = np.ones(N)    
 
-    # Filter to only valid characters
     data = [c for c in data if c in char_to_ix]
 
     for i in range(len(data) - 1):

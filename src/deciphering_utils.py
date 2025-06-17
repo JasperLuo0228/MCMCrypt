@@ -72,23 +72,20 @@ def compute_log_probability_by_counts(transition_counts, text, permutation_map, 
     Computes the log probability of a text under a given permutation map.
     """
 
-    eps = 1e-8  # small constant to avoid log(0)
+    eps = 1e-8  
 
-    # Map first character
     first_char = permutation_map.get(text[0], text[0])
     c0 = char_to_ix.get(first_char, None)
     if c0 is None:
-        return -np.inf  # unknown character — return lowest possible log prob
+        return -np.inf 
     frequency_statistics = np.clip(frequency_statistics, 1e-8, None)
     p = np.log(frequency_statistics[c0])
 
-    # Build remapped index list
     try:
         indices = [char_to_ix[permutation_map[c]] for c in char_to_ix]
     except KeyError:
-        return -np.inf  # bad permutation
+        return -np.inf  
 
-    # Log transition matrix with epsilon
     log_tm = np.log(transition_matrix + eps)
     log_tm_sub = log_tm[indices, :][:, indices]
 
@@ -151,9 +148,8 @@ def compute_probability_of_state(state):
 
 import numpy as np
 
-# Character groups (must match your 82-symbol ALPHABET)
 LETTER_SET = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
-PUNCT_SET  = set("0123456789 ,.;:?!-()\"/\\@#&%$_ ")   # 19 symbols + space
+PUNCT_SET  = set("0123456789 ,.;:?!-()\"/\\@#&%$_ ")   
 
 def propose_a_move(state, eps: float = 1e-6,
                        p_letter=0.6, p_punct=0.3):
@@ -171,15 +167,13 @@ def propose_a_move(state, eps: float = 1e-6,
         w        = w / w.sum()
         return rng.choice(pool_arr, p=w)
 
-    # choose the pool to sample from
     if u < p_letter:
         pool = LETTER_SET
     elif u < p_letter + p_punct:
         pool = PUNCT_SET
     else:
-        pool = p_map.keys()      # fall-back to “swap any”
+        pool = p_map.keys()      
 
-    # draw two distinct symbols
     while True:
         c1 = _weighted_choice(pool)
         c2 = _weighted_choice(pool)
